@@ -10,12 +10,18 @@ import android.view.View
 class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = null,defStyleAttr: Int = 0) : View(context,attrs,defStyleAttr) {
 
     //数据源
-    var dataList: MutableList<Int> = mutableListOf()
-    var hintList: MutableList<String> = mutableListOf()
+    private var dataList: MutableList<Int> = mutableListOf()
+    private var hintList: MutableList<String> = mutableListOf()
     //颜色
     private var pureColors: MutableList<String> = mutableListOf()
 
     var heights: Int = 0
+    //圆环在容器中到左边界的距离和到右边界的距离一样
+    val ringOffset:Float = 90f
+    //圆环半径
+    val ringRadius:Float = 160f
+    //右边小圆圈半径
+    val smallCircleRadius = 20f
     //大圆圆环宽度
     val strokeWidth: Float =26f
     //大圆上下总间距
@@ -35,6 +41,8 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
         initData()
         //初始化画笔
         initPaint()
+
+        Log.e("TAG","MyView init")
     }
 
     private fun initPaint() {
@@ -64,27 +72,27 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
     }
 
     private fun initData() {
-        dataList.add(1251600)
-        dataList.add(500000)
-        dataList.add(600000)
-        dataList.add(130200)
-        dataList.add(500000)
-
-        hintList.add("网店售价")
-        hintList.add("消保金")
-        hintList.add("技术年费")
-        hintList.add("居间费")
-        hintList.add("品牌授权押金")
-
         pureColors.add("#85b4ff")
         pureColors.add("#4ef498")
         pureColors.add("#3e34ff")
         pureColors.add("#fed74f")
         pureColors.add("#ff4091")
 
+    }
+
+    fun setDataList(dataList:MutableList<Int>){
+        this.dataList = dataList
+
+        /*  最开始求和这一步放在init里面的  init是在加载布局后就调用了  此时由于activity中数据还未加载完成 所以total会为0
+            所以在设置数据源后进行一个数据的处理  放在这来
+        * */
         for (item in dataList){
             total+=item
         }
+    }
+
+    fun setHintList(hintList:MutableList<String>){
+        this.hintList = hintList
     }
 
     override fun onDraw(canvas: Canvas?) {
@@ -96,10 +104,13 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
         drawTotal(canvas)
         //根据比例绘制圆弧
         drawArc(canvas)
+
+//        canvas?.drawCircle(ringOffset,heights/2*1f,35f,halfProcessCirclePaint)
     }
 
     private fun drawArc(canvas: Canvas?) {
-        var rectF = RectF(90f, 90f, 400f, 400f)
+        //圆弧所切的矩形区域  y方向在容器的中心
+        val rectF = RectF(ringOffset, heights/2-ringRadius, ringOffset+ringRadius*2, heights/2+ringRadius)
         var recordAngle = 0f
         dataList.forEachIndexed { index, i ->
             var percent: Float
@@ -118,30 +129,28 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
 
     private fun drawTotal(canvas: Canvas?) {
         totalPaint.typeface = Typeface.DEFAULT_BOLD
-        canvas?.drawText("￥" + total.toString(), 240F, 240F, totalPaint)
+        canvas?.drawText("￥" + total.toString(), ringOffset+ringRadius, heights/2*1f, totalPaint)
         totalPaint.typeface = Typeface.DEFAULT
-        canvas?.drawText("总费用", 240f, 290f, totalPaint)
+        canvas?.drawText("总费用", ringOffset+ringRadius, heights/2*1f+dip2px(16f), totalPaint)
     }
 
     private fun drawRightInfo(canvas: Canvas?) {
         //每行文字之间的间距
-        var littleDis: Float = (heights - dip2px(DISTANCE)) * 1f / dataList.size
+        val littleDis: Float = (heights - dip2px(DISTANCE)) * 1f / dataList.size
         //文字初始高度  行间距分上下两个部分  整个文字区域相对圆环还有个间距 也是分上下两部分
-        var startY: Float = littleDis / 2 + dip2px(DISTANCE) / 2
-        //文字起始x坐标
-        var cx: Float = 250 + 100 + strokeWidth + 150
-        //最大文字宽度
-        var txtWidth = txtPaint.measureText("12516000")
+        val startY: Float = littleDis / 2 + dip2px(DISTANCE) / 2
+        //右边起始x坐标  距离圆环40dp
+        val cx: Float = ringOffset+ringRadius*2+dip2px(40f)
         dataList.forEachIndexed { index, i ->
             //index 索引  i是value
-            var newY = startY + index * littleDis
-            smallCirclePaint.color = Color.parseColor(pureColors.get(index))
-            canvas?.drawCircle(cx, newY, 20f, smallCirclePaint)
+            val newY = startY + index * littleDis
+            smallCirclePaint.color = Color.parseColor(pureColors[index])
+            canvas?.drawCircle(cx, newY, smallCircleRadius, smallCirclePaint)
             //画笔从左开始
             txtPaint.textAlign = Paint.Align.LEFT
             canvas?.drawText(
                 "￥" + i,
-                cx + 20 + dip2px(5f),
+                cx + dip2px(15f),
                 newY - ((txtPaint.descent() + txtPaint.ascent()) / 2f),
                 txtPaint
             )
@@ -149,7 +158,7 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
             txtPaint.textAlign = Paint.Align.RIGHT
             canvas?.drawText(
                 hintList[index],
-                cx + 20 + dip2px(5f) + txtWidth + dip2px(100f),
+                cx + dip2px(15f) + dip2px(130f),
                 newY - ((txtPaint.descent() + txtPaint.ascent()) / 2f),
                 txtPaint
             )
@@ -159,12 +168,14 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
 
-        Log.e("TAG", h.toString())
+//        Log.e("TAG", h.toString())
         heights = h
+
+//        Log.e("TAG","高度："+dip2px(170f))
     }
 
     fun dip2px(dpValue : Float) : Int{
-        var scale: Float = context.resources.displayMetrics.density
+        val scale: Float = context.resources.displayMetrics.density
         return (dpValue*scale+0.5f).toInt()
     }
 }
