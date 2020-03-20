@@ -42,7 +42,6 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
         //初始化画笔
         initPaint()
 
-        Log.e("TAG","MyView init")
     }
 
     private fun initPaint() {
@@ -72,6 +71,7 @@ class MyView @JvmOverloads constructor(context: Context,attrs: AttributeSet? = n
     }
 
     private fun initData() {
+        //颜色集  暂定五种  可以根据业务需求加
         pureColors.add("#85b4ff")
         pureColors.add("#4ef498")
         pureColors.add("#3e34ff")
