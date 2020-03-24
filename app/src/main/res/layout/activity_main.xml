@@ -7,7 +7,7 @@
     android:orientation="vertical"
     android:background="#ffffff">
 
-    <com.example.myview.MyView
+    <com.example.myview.ChartView
         android:layout_width="match_parent"
         android:layout_height="170dp"
         android:id="@+id/my_view"
